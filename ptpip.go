@@ -116,7 +116,7 @@ func (c *Client) Connect() (err error) {
 }
 
 // OperationRequest ...
-func (c *Client) OperationRequest(opCode uint16, phase uint32, transactionID uint32, p1, p2, p3, p4 uint32) (data []byte, err error) {
+func (c *Client) OperationRequest(opCode uint16, phase uint32, transactionID uint32, p1, p2, p3, p4 uint32, sendData []byte) (recvData []byte, err error) {
 
 	req := &packet.OperationRequestPacket{
 		DataPhaseInfo: phase,
@@ -128,10 +128,10 @@ func (c *Client) OperationRequest(opCode uint16, phase uint32, transactionID uin
 		P4:            p4,
 	}
 
-	data, err = packet.OperationRequest(c.cConn, req)
+	recvData, err = packet.OperationRequest(c.cConn, req, sendData)
 	if err != nil {
 		return nil, err
 	}
 
-	return data, err
+	return recvData, err
 }

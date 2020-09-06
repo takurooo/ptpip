@@ -2,6 +2,7 @@ package packet
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 
@@ -266,6 +267,84 @@ func sendOperationRequestPacket(w io.Writer, req *OperationRequestPacket) (err e
 	return nil
 }
 
+func sendDataPacket(w io.Writer, sendData []byte) (err error) {
+
+	if len(sendData) == 0 {
+		return errors.New("send data empty")
+	}
+
+	{
+		packetLen := uint32(20)
+		buff := buff.NewBuffer(int(packetLen))
+		bw := binaryio.NewWriter(buff)
+
+		// write packet header to buffer
+		bw.WriteU32(packetLen, endian)
+		bw.WriteU32(PacketTypeStartData, endian)
+		// write packet body to buffer
+		bw.WriteU32(1, endian)
+		bw.WriteU64(uint64(len(sendData)), endian)
+
+		if bw.Err() != nil {
+			return bw.Err()
+		}
+
+		packet := buff.Bytes()
+
+		err = sendPakcet(w, packet)
+		if err != nil {
+			return err
+		}
+	}
+	{
+		packetLen := uint32(12 + len(sendData))
+		buff := buff.NewBuffer(int(packetLen))
+		bw := binaryio.NewWriter(buff)
+
+		// write packet header to buffer
+		bw.WriteU32(packetLen, endian)
+		bw.WriteU32(PacketTypeData, endian)
+		// write packet body to buffer
+		bw.WriteU32(1, endian)
+		bw.WriteRaw(sendData)
+
+		if bw.Err() != nil {
+			return bw.Err()
+		}
+
+		packet := buff.Bytes()
+
+		err = sendPakcet(w, packet)
+		if err != nil {
+			return err
+		}
+	}
+	{
+		packetLen := uint32(12)
+		buff := buff.NewBuffer(int(packetLen))
+		bw := binaryio.NewWriter(buff)
+
+		// write packet header to buffer
+		bw.WriteU32(packetLen, endian)
+		bw.WriteU32(PacketTypeEndData, endian)
+		// write packet body to buffer
+		bw.WriteU32(1, endian)
+
+		if bw.Err() != nil {
+			return bw.Err()
+		}
+
+		packet := buff.Bytes()
+
+		err = sendPakcet(w, packet)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func recvDataPacket(r io.Reader) (data []byte, err error) {
 	var (
 		packetLen       uint32
@@ -409,15 +488,21 @@ func InitEventRequest(conn PTPIPConn, conndectionNumber uint32) (err error) {
 }
 
 // OperationRequest ...
-func OperationRequest(conn PTPIPConn, req *OperationRequestPacket) (data []byte, err error) {
+func OperationRequest(conn PTPIPConn, req *OperationRequestPacket, sendData []byte) (recvData []byte, err error) {
 
 	err = sendOperationRequestPacket(conn, req)
 	if err != nil {
 		return nil, err
 	}
 
-	if req.DataPhaseInfo == DataPhaseInfoNoDataOrDataIn {
-		data, err = recvDataPacket(conn)
+	switch req.DataPhaseInfo {
+	case DataPhaseInfoNoDataOrDataIn:
+		recvData, err = recvDataPacket(conn)
+		if err != nil {
+			return nil, err
+		}
+	case DataPhaseInfoDataOut:
+		err = sendDataPacket(conn, sendData)
 		if err != nil {
 			return nil, err
 		}
@@ -432,7 +517,7 @@ func OperationRequest(conn PTPIPConn, req *OperationRequestPacket) (data []byte,
 		return nil, fmt.Errorf("operation response error 0x%08x", resp.ResponseCode)
 	}
 
-	return data, nil
+	return recvData, nil
 }
 
 // RecvEvent ...

@@ -17,7 +17,7 @@ func main() {
 	defer client.Disconnect()
 
 	// GetDeviceInfo
-	data, err := client.OperationRequest(0x1001, packet.DataPhaseInfoNoDataOrDataIn, 1, 0, 0, 0, 0)
+	data, err := client.OperationRequest(0x1001, packet.DataPhaseInfoNoDataOrDataIn, 1, 0, 0, 0, 0, nil)
 	if err != nil {
 		panic(err)
 	}

@@ -12,8 +12,8 @@ type PTPIPConn interface {
 
 const (
 	DataPhaseInfoUnkownData     uint32 = 0x00000000
-	DataPhaseInfoNoDataOrDataIn uint32 = 0x00000000
-	DataPhaseInfoDataOut        uint32 = 0x00000000
+	DataPhaseInfoNoDataOrDataIn uint32 = 0x00000001
+	DataPhaseInfoDataOut        uint32 = 0x00000002
 )
 
 // Packet Type
