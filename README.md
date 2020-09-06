@@ -28,19 +28,19 @@ func main() {
     client := ptpip.NewClient(yourDeviceAddr, nil)
     
     // establish ptp-ip connection
-	if err := client.Connect(); err != nil {
-		panic(err)
-	}
-	defer client.Disconnect()
+    if err := client.Connect(); err != nil {
+        panic(err)
+    }
+    defer client.Disconnect()
 
-	// GetDeviceInfo
-	data, err := client.OperationRequest(0x1001, packet.DataPhaseInfoNoDataOrDataIn, 1, 0, 0, 0, 0)
-	if err != nil {
-		panic(err)
+    // GetDeviceInfo
+    data, err := client.OperationRequest(0x1001, packet.DataPhaseInfoNoDataOrDataIn, 1, 0, 0, 0, 0)
+    if err != nil {
+        panic(err)
     }
     
     // DeviceInfo
-	fmt.Println(data)
+    fmt.Println(data)
 
 }
 ```
