@@ -7,7 +7,7 @@ import (
 	"io"
 
 	"github.com/takurooo/binaryio"
-	"github.com/takurooo/ptpip/buff"
+	"github.com/takurooo/swriter"
 )
 
 const (
@@ -107,15 +107,16 @@ func sendInitCommandRequestPacket(w io.Writer, p *InitCommandRequestPacket) (err
 	if 16 < len(p.GUID) {
 		return fmt.Errorf("invalid initiator GUID len 16 < %d", len(p.GUID))
 	}
-	if 19 < len(p.FriendlyName) {
-		return fmt.Errorf("invalid initiator FriendlyName len 18 < %d", len(p.FriendlyName))
-	}
 
 	encodedFriendlyName := encodeFriendlyName(p.FriendlyName)
+	if 40 < len(encodedFriendlyName) {
+		return fmt.Errorf("invalid initiator FriendlyName len 40 < %d", len(encodedFriendlyName))
+	}
+
 	packetLen := uint32(12 + len(p.GUID) + len(encodedFriendlyName))
 
-	buff := buff.NewBuffer(int(packetLen))
-	bw := binaryio.NewWriter(buff)
+	sw := swriter.New(int(packetLen))
+	bw := binaryio.NewWriter(sw)
 
 	// write packet header to buffer
 	bw.WriteU32(packetLen, endian)
@@ -135,7 +136,7 @@ func sendInitCommandRequestPacket(w io.Writer, p *InitCommandRequestPacket) (err
 	fmt.Printf("packetLen        : 0x%08x\n", packetLen)
 	fmt.Println(p)
 
-	packet := buff.Bytes()
+	packet := sw.Bytes()
 
 	err = sendPakcet(w, packet)
 	if err != nil {
@@ -180,8 +181,8 @@ func sendInitEventRequestPacket(w io.Writer, conndectionNumber uint32) (err erro
 
 	packetLen := uint32(12)
 
-	buff := buff.NewBuffer(int(packetLen))
-	bw := binaryio.NewWriter(buff)
+	sw := swriter.New(int(packetLen))
+	bw := binaryio.NewWriter(sw)
 
 	// write packet header to buffer
 	bw.WriteU32(packetLen, endian)
@@ -199,7 +200,7 @@ func sendInitEventRequestPacket(w io.Writer, conndectionNumber uint32) (err erro
 	fmt.Printf("packetLen        : 0x%08x\n", packetLen)
 	fmt.Printf("ConnectionNumber : 0x%08x\n", conndectionNumber)
 
-	packet := buff.Bytes()
+	packet := sw.Bytes()
 
 	err = sendPakcet(w, packet)
 	if err != nil {
@@ -233,8 +234,8 @@ func recvInitEventAckPacket(r io.Reader) error {
 func sendOperationRequestPacket(w io.Writer, req *OperationRequestPacket) (err error) {
 
 	packetLen := uint32(34)
-	buff := buff.NewBuffer(int(packetLen))
-	bw := binaryio.NewWriter(buff)
+	sw := swriter.New(int(packetLen))
+	bw := binaryio.NewWriter(sw)
 
 	// write packet header to buffer
 	bw.WriteU32(packetLen, endian)
@@ -257,7 +258,7 @@ func sendOperationRequestPacket(w io.Writer, req *OperationRequestPacket) (err e
 	fmt.Printf("packetLen        : 0x%08x\n", packetLen)
 	fmt.Println(req)
 
-	packet := buff.Bytes()
+	packet := sw.Bytes()
 
 	err = sendPakcet(w, packet)
 	if err != nil {
@@ -275,8 +276,8 @@ func sendDataPacket(w io.Writer, sendData []byte) (err error) {
 
 	{
 		packetLen := uint32(20)
-		buff := buff.NewBuffer(int(packetLen))
-		bw := binaryio.NewWriter(buff)
+		sw := swriter.New(int(packetLen))
+		bw := binaryio.NewWriter(sw)
 
 		// write packet header to buffer
 		bw.WriteU32(packetLen, endian)
@@ -289,7 +290,7 @@ func sendDataPacket(w io.Writer, sendData []byte) (err error) {
 			return bw.Err()
 		}
 
-		packet := buff.Bytes()
+		packet := sw.Bytes()
 
 		err = sendPakcet(w, packet)
 		if err != nil {
@@ -298,8 +299,8 @@ func sendDataPacket(w io.Writer, sendData []byte) (err error) {
 	}
 	{
 		packetLen := uint32(12 + len(sendData))
-		buff := buff.NewBuffer(int(packetLen))
-		bw := binaryio.NewWriter(buff)
+		sw := swriter.New(int(packetLen))
+		bw := binaryio.NewWriter(sw)
 
 		// write packet header to buffer
 		bw.WriteU32(packetLen, endian)
@@ -312,7 +313,7 @@ func sendDataPacket(w io.Writer, sendData []byte) (err error) {
 			return bw.Err()
 		}
 
-		packet := buff.Bytes()
+		packet := sw.Bytes()
 
 		err = sendPakcet(w, packet)
 		if err != nil {
@@ -321,8 +322,8 @@ func sendDataPacket(w io.Writer, sendData []byte) (err error) {
 	}
 	{
 		packetLen := uint32(12)
-		buff := buff.NewBuffer(int(packetLen))
-		bw := binaryio.NewWriter(buff)
+		sw := swriter.New(int(packetLen))
+		bw := binaryio.NewWriter(sw)
 
 		// write packet header to buffer
 		bw.WriteU32(packetLen, endian)
@@ -334,7 +335,7 @@ func sendDataPacket(w io.Writer, sendData []byte) (err error) {
 			return bw.Err()
 		}
 
-		packet := buff.Bytes()
+		packet := sw.Bytes()
 
 		err = sendPakcet(w, packet)
 		if err != nil {
@@ -353,7 +354,7 @@ func recvDataPacket(r io.Reader) (data []byte, err error) {
 		totalDataLength uint64
 	)
 
-	buff := buff.NewBuffer(64)
+	sw := swriter.New(64)
 
 L:
 	for {
@@ -370,21 +371,21 @@ L:
 			// fmt.Println("PacketTypeData")
 			_ = brBody.ReadU32(endian)                       // transactionID
 			payload = brBody.ReadRaw(uint64(packetLen - 12)) // packetLen - packetHeaderSize - 4
-			buff.Write(payload)
+			sw.Write(payload)
 		case PacketTypeEndData:
 			// fmt.Println("PacketTypeEndData")
 			_ = brBody.ReadU32(endian)                       // transactionID
 			payload = brBody.ReadRaw(uint64(packetLen - 12)) // packetLen - packetHeaderSize - 4
-			buff.Write(payload)
+			sw.Write(payload)
 			break L
 		}
 	}
 
-	if uint64(buff.Len()) != totalDataLength {
-		return nil, fmt.Errorf("invalid data len 0x%x expected 0x%x", buff.Len(), totalDataLength)
+	if uint64(sw.Len()) != totalDataLength {
+		return nil, fmt.Errorf("invalid data len 0x%x expected 0x%x", sw.Len(), totalDataLength)
 	}
 
-	return buff.Bytes(), nil
+	return sw.Bytes(), nil
 }
 
 func recvOperationReponsePacket(r io.Reader) (resp *OperationResponsePacket, err error) {
@@ -438,8 +439,8 @@ func parseEventPacket(packetBody []byte) (e *EventPacket, err error) {
 func sendProbeResponsePacket(w io.Writer) (err error) {
 
 	packetLen := uint32(8)
-	buff := buff.NewBuffer(int(packetLen))
-	bw := binaryio.NewWriter(buff)
+	sw := swriter.New(int(packetLen))
+	bw := binaryio.NewWriter(sw)
 
 	// write packet header to buffer
 	bw.WriteU32(packetLen, endian)
@@ -449,7 +450,7 @@ func sendProbeResponsePacket(w io.Writer) (err error) {
 		return bw.Err()
 	}
 
-	packet := buff.Bytes()
+	packet := sw.Bytes()
 
 	err = sendPakcet(w, packet)
 	if err != nil {
