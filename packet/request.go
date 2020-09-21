@@ -58,10 +58,10 @@ func decodeFriendlyName(br *binaryio.Reader) string {
 	return string(frinedlyName)
 }
 
-func sendPakcet(w io.Writer, packet []byte) (err error) {
+func sendPacket(w io.Writer, packet []byte) (err error) {
 
 	// fmt.Println("----------------")
-	// fmt.Println("sendPakcet")
+	// fmt.Println("sendPacket")
 	// fmt.Println("----------------")
 	// dump(packet, 4)
 
@@ -72,7 +72,7 @@ func sendPakcet(w io.Writer, packet []byte) (err error) {
 	return nil
 }
 
-func recvPaket(r io.Reader) (packetLen uint32, packetType uint32, packetBody []byte, err error) {
+func recvPacket(r io.Reader) (packetLen uint32, packetType uint32, packetBody []byte, err error) {
 	// read packet header
 	var packetHeader = make([]byte, packetHeaderSize)
 	_, err = r.Read(packetHeader)
@@ -94,7 +94,7 @@ func recvPaket(r io.Reader) (packetLen uint32, packetType uint32, packetBody []b
 	}
 
 	// fmt.Println("----------------")
-	// fmt.Println("recvPaket")
+	// fmt.Println("recvPacket")
 	// fmt.Println("----------------")
 	// dump(append(packetHeader, packetBody...), 4)
 
@@ -138,7 +138,7 @@ func sendInitCommandRequestPacket(w io.Writer, p *InitCommandRequestPacket) (err
 
 	packet := sw.Bytes()
 
-	err = sendPakcet(w, packet)
+	err = sendPacket(w, packet)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func sendInitCommandRequestPacket(w io.Writer, p *InitCommandRequestPacket) (err
 func recvInitCommandAckPacket(r io.Reader) (ack *InitCommandAckPacket, err error) {
 
 	// read packet header
-	packetLen, packetType, packetBody, err := recvPaket(r)
+	packetLen, packetType, packetBody, err := recvPacket(r)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func sendInitEventRequestPacket(w io.Writer, conndectionNumber uint32) (err erro
 
 	packet := sw.Bytes()
 
-	err = sendPakcet(w, packet)
+	err = sendPacket(w, packet)
 	if err != nil {
 		return err
 	}
@@ -213,7 +213,7 @@ func sendInitEventRequestPacket(w io.Writer, conndectionNumber uint32) (err erro
 func recvInitEventAckPacket(r io.Reader) error {
 
 	// read packet header
-	packetLen, packetType, _, err := recvPaket(r)
+	packetLen, packetType, _, err := recvPacket(r)
 	if err != nil {
 		return err
 	}
@@ -260,7 +260,7 @@ func sendOperationRequestPacket(w io.Writer, req *OperationRequestPacket) (err e
 
 	packet := sw.Bytes()
 
-	err = sendPakcet(w, packet)
+	err = sendPacket(w, packet)
 	if err != nil {
 		return err
 	}
@@ -292,7 +292,7 @@ func sendDataPacket(w io.Writer, sendData []byte) (err error) {
 
 		packet := sw.Bytes()
 
-		err = sendPakcet(w, packet)
+		err = sendPacket(w, packet)
 		if err != nil {
 			return err
 		}
@@ -315,7 +315,7 @@ func sendDataPacket(w io.Writer, sendData []byte) (err error) {
 
 		packet := sw.Bytes()
 
-		err = sendPakcet(w, packet)
+		err = sendPacket(w, packet)
 		if err != nil {
 			return err
 		}
@@ -337,7 +337,7 @@ func sendDataPacket(w io.Writer, sendData []byte) (err error) {
 
 		packet := sw.Bytes()
 
-		err = sendPakcet(w, packet)
+		err = sendPacket(w, packet)
 		if err != nil {
 			return err
 		}
@@ -358,7 +358,7 @@ func recvDataPacket(r io.Reader) (data []byte, err error) {
 
 L:
 	for {
-		packetLen, packetType, packetBody, err = recvPaket(r)
+		packetLen, packetType, packetBody, err = recvPacket(r)
 		brBody := binaryio.NewReader(bytes.NewReader(packetBody))
 		var payload []byte
 
@@ -391,7 +391,7 @@ L:
 func recvOperationReponsePacket(r io.Reader) (resp *OperationResponsePacket, err error) {
 
 	// read packet header
-	packetLen, packetType, packetBody, err := recvPaket(r)
+	packetLen, packetType, packetBody, err := recvPacket(r)
 	if err != nil {
 		return nil, err
 	}
@@ -452,7 +452,7 @@ func sendProbeResponsePacket(w io.Writer) (err error) {
 
 	packet := sw.Bytes()
 
-	err = sendPakcet(w, packet)
+	err = sendPacket(w, packet)
 	if err != nil {
 		return err
 	}
@@ -528,7 +528,7 @@ func RecvEvent(conn PTPIPConn) (eventCode uint16, err error) {
 L:
 	for {
 		// read packet header
-		_, packetType, packetBody, err := recvPaket(conn)
+		_, packetType, packetBody, err := recvPacket(conn)
 		if err != nil {
 			return 0, err
 		}
